@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SPKN</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <style>
+        /* Your existing styles */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .filter-section {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .filter-section label {
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .filter-section select,
+        .filter-section input {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            margin-right: 10px;
+            width: 180px;
+        }
+
+        table {
+            width: 100%;                /* Use 100% width for responsiveness */
+            max-width: 1300px;          /* Set a maximum width to keep it compact */
+            border-collapse: collapse;  /* Remove space between borders */
+            margin: 20px auto;          /* Center the table and add vertical margin */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Optional: Add shadow */
+            background-color: white;    /* Optional: Table background color */
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .edit-btn {
+            background-color: #28a745;
+        }
+
+        .edit-btn:hover {
+            background-color: #218838;
+        }
+
+        .exit-btn {
+            background-color: #dc3545;
+        }
+
+        .exit-btn:hover {
+            background-color: #c82333;
+        }
+
+        .full-image {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .full-image img {
+            max-width: 90%;
+            max-height: 90%;
+        }
+
+        .full-image button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #dc3545;
+        }
+
+        .add-item button {
+            padding: 10px 20px; /* Add padding to button */
+            background-color: #007bff; /* Button background color */
+            color: white; /* Button text color */
+            border: none;
+            margin-left: 120px; /* Remove border */
+            border-radius: 5px; /* Rounded corners */
+            cursor: pointer; /* Pointer cursor on hover */
+        }
+
+        button:hover {
+            background-color: #0056b3; /* Darker shade on hover */
+        }
+    </style>
+
+    <script>
+        function showImage(index) {
+            const imageDiv = document.getElementById(`full-image-${index}`);
+            imageDiv.style.display = 'flex';
+        }
+
+        function hideImage(index) {
+            const imageDiv = document.getElementById(`full-image-${index}`);
+            imageDiv.style.display = 'none';
+        }
+
+        function filterData() {
+            const professionFilter = document.getElementById('profession-filter').value.toLowerCase();
+            const genderFilter = document.getElementById('gender-filter').value.toLowerCase();
+            const salaryFilter = document.getElementById('salary-filter').value;
+            const jadagamFilter = document.getElementById('jadagam-filter').value.toLowerCase();
+            const rows = document.querySelectorAll('tbody tr');
+
+            rows.forEach(row => {
+                const profession = row.querySelector('.profession').textContent.toLowerCase();
+                const gender = row.querySelector('.gender').textContent.toLowerCase();
+                const salary = row.querySelector('.salary').textContent;
+                const jadagam = row.querySelector('.jadagam').textContent.toLowerCase();
+
+                row.style.display = (
+                    (!professionFilter || profession.includes(professionFilter)) &&
+                    (!genderFilter || gender.includes(genderFilter)) &&
+                    (!salaryFilter || salary.includes(salaryFilter)) &&
+                    (!jadagamFilter || jadagam.includes(jadagamFilter))
+                ) ? '' : 'none';
+            });
+        }
+
+        // Function to delete an item
+        function deleteItem(itemId) {
+            if (confirm("Are you sure you want to delete this item?")) {
+                fetch(`/delete-item/${itemId}`, {
+                    method: 'DELETE',
+                })
+                .then(response => {
+                    if (response.ok) {
+                        alert("Item deleted successfully");
+                        location.reload();  // Reload the page to reflect changes
+                    } else {
+                        alert("Error deleting item");
+                    }
+                })
+                .catch(err => console.error(err));
+            }
+        }
+        function downloadAsPDF(index, imageUrl) {
+            const { jsPDF } = window.jspdf;
+
+            const doc = new jsPDF();
+
+            const img = new Image();
+            img.src = imageUrl;
+            img.onload = function () {
+                doc.addImage(img, 'PNG', 10, 10, 180, 160); // Adjust the width and height as needed
+                doc.save(`image-${index}.pdf`); // Save the PDF
+            };
+        }
+    </script>
+</head>
+<body>
+    <h1>SPKN</h1>
+    <a href="add-item" class="add-item">
+        <button>ADD PROFILE</button>
+    </a>
+    
+    <!-- Filter Section -->
+    <div class="filter-section">
+        <label for="profession-filter">Profession:</label>
+        <select id="profession-filter" onchange="filterData()">
+            <option value="">All</option>
+            <option value="doctor">Doctor</option>
+            <option value="engineer">Engineer</option>
+            <option value="farmer">Farmer</option>
+            <option value="actor">Actor</option>
+            <option value="businessman">Businessman</option>
+        </select>
+
+        <label for="gender-filter">Gender:</label>
+        <select id="gender-filter" onchange="filterData()">
+            <option value="">All</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          
+        </select>
+
+        <label for="salary-filter">Salary:</label>
+        <input type="number" id="salary-filter" oninput="filterData()" placeholder="Filter by salary" />
+
+        <label for="jadagam-filter">Jadagam:</label>
+        <select id="jadagam-filter" onchange="filterData()">
+            <option value="">All</option>
+            <option value="sevai">Sevai</option>
+            <option value="ragukedhu">Ragukedhu</option>
+            <option value="suthajadagam">Suthajadagam</option>
+            <option value="no">No</option>
+        </select>
+    </div>
+
+    <!-- Display Data in Table -->
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Age</th>
+                <th>Salary</th>
+                <th>Gender</th>
+                <th>Profession</th>
+                <th>Jadagam</th>
+                <th>Image</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% items.forEach((item, index) => { %>
+                <tr>
+                    <td class="name"><%= item.name %></td>
+                    <td class="age"><%= item.age %></td>
+                    <td class="salary"><%= item.salary %></td>
+                    <td class="gender"><%= item.gender %></td>
+                    <td class="profession"><%= item.profession %></td>
+                    <td class="jadagam"><%= item.jadagam %></td>
+                    <td>
+                        <% if (item.img && item.img.data && item.img.contentType) { %>
+                            <button onclick="showImage(<%= index %>)">View</button>
+                            <button onclick="downloadAsPDF(<%= index %>, 'data:<%= item.img.contentType %>;base64,<%= item.img.data.toString('base64') %>')">Download </button>
+                            <div id="full-image-<%= index %>" class="full-image">
+                                <img src="data:<%= item.img.contentType %>;base64,<%= item.img.data.toString('base64') %>" alt="Image" />
+                                <button class="exit-btn" onclick="hideImage(<%= index %>)">Close</button>
+                            </div>
+                        <% } else { %>
+                            <span>No Image Available</span>
+                        <% } %>
+                    </td>
+                    <td>
+                        <a href="/edit-item/<%= item._id %>">
+                            <button class="edit-btn">Edit</button>
+                        </a>
+                        <button class="exit-btn" onclick="deleteItem('<%= item._id %>')">Delete</button>
+                    </td>
+                </tr>
+            <% }); %>
+        </tbody>
+    </table>
+</body>
+</html>
